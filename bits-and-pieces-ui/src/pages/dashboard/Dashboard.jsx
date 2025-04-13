@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
+import API_BASE_URL from "./apiConfig";
 
 import { BudgetStatusCard, MonthlyTotalsCard, OverallBalanceCard } from "./components/TopCards";
 import CategoryExpenseChart from "./components/CategoryExpenseChartCard";
@@ -213,7 +214,7 @@ export default function Dashboard() {
       try {
         setLoading(true);
         
-        const categoriesResponse = await fetch("http://127.0.0.1:8000/api/categories/", {
+        const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories/`, {
           headers: { Authorization: `Token ${token}` }
         });
         if (!categoriesResponse.ok) throw new Error("Failed to fetch categories");
@@ -222,7 +223,7 @@ export default function Dashboard() {
         const currentDate = new Date();
         const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
         
-        const budgetsResponse = await fetch(`http://127.0.0.1:8000/api/budgets/?month=${currentMonth}`, {
+        const budgetsResponse = await fetch(`${API_BASE_URL}/api/budgets/?month=${currentMonth}`, {
           headers: { Authorization: `Token ${token}` }
         });
         if (!budgetsResponse.ok) throw new Error("Failed to fetch budgets");
@@ -230,7 +231,7 @@ export default function Dashboard() {
         
         const monthlyBudget = budgetsData.reduce((total, item) => total + parseFloat(item.amount), 0);
         
-        const incomeResponse = await fetch("http://127.0.0.1:8000/api/incomes/", {
+        const incomeResponse = await fetch(`${API_BASE_URL}/api/incomes/`,  {
           headers: { Authorization: `Token ${token}` }
         });
         if (!incomeResponse.ok) throw new Error("Failed to fetch incomes");
@@ -243,7 +244,7 @@ export default function Dashboard() {
           total + parseFloat(income.amount), 0
         );
         
-        const expenseResponse = await fetch("http://127.0.0.1:8000/api/expenses/", {
+        const expenseResponse = await fetch(`${API_BASE_URL}/api/expenses/`, {
           headers: { Authorization: `Token ${token}` }
         });
         if (!expenseResponse.ok) throw new Error("Failed to fetch expenses");
@@ -301,7 +302,7 @@ export default function Dashboard() {
             total + parseFloat(expense.amount), 0
           );
           
-          const monthBudgetsResponse = await fetch(`http://127.0.0.1:8000/api/budgets/?month=${monthStr}-01`, {
+          const monthBudgetsResponse = await fetch(`${API_BASE_URL}/api/budgets/?month=${monthStr}-01`, {
             headers: { Authorization: `Token ${token}` }
           });
           const monthBudgets = await monthBudgetsResponse.json();

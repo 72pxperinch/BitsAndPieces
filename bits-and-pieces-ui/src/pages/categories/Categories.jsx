@@ -16,7 +16,7 @@ function CategoryManager({ title, categoryType }) {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://127.0.0.1:8000/api/categories/?type=${categoryType}`, {
+    fetch(`${API_BASE_URL}/api/categories/?type=${categoryType}`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then((res) => res.json())
@@ -33,7 +33,7 @@ function CategoryManager({ title, categoryType }) {
   const handleAdd = () => {
     if (!newCategory.trim()) return;
 
-    fetch("http://127.0.0.1:8000/api/categories/", {
+    fetch(`${API_BASE_URL}api/categories/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -55,7 +55,7 @@ function CategoryManager({ title, categoryType }) {
   };
 
   const handleDelete = (id) => {
-    fetch(`http://127.0.0.1:8000/api/categories/${id}/`, {
+    fetch(`${API_BASE_URL}/api/categories/${id}/`, {
       method: "DELETE",
       headers: { Authorization: `Token ${token}` },
     })
@@ -75,7 +75,7 @@ function CategoryManager({ title, categoryType }) {
     const cat = categories[editingIndex];
     if (!editText.trim()) return;
 
-    fetch(`http://127.0.0.1:8000/api/categories/${cat.id}/`, {
+    fetch(`${API_BASE_URL}/api/categories/${cat.id}/`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

@@ -25,7 +25,7 @@ export default function HistoricalBudgetChart({ historyData, currentMonth }) {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://127.0.0.1:8000/api/categories/`, {
+    fetch(`${API_BASE_URL}/api/categories/`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then((res) => res.json())

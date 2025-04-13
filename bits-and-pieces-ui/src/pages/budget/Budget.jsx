@@ -18,7 +18,7 @@ export default function Budget() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://127.0.0.1:8000/api/categories/`, {
+    fetch(`${API_BASE_URL}/api/categories/`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then((res) => res.json())
@@ -37,7 +37,7 @@ export default function Budget() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://127.0.0.1:8000/api/budgets/`, {
+    fetch(`${API_BASE_URL}/api/budgets/`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then((res) => res.json())
@@ -208,7 +208,7 @@ export default function Budget() {
 
     console.log("Formatted date:", formattedDate);
     fetch(
-      `http://127.0.0.1:8000/api/budgets/?category=${categoryId}&month=${formattedDate}`,
+      `${API_BASE_URL}/api/budgets/?category=${categoryId}&month=${formattedDate}`,
       {
         headers: { Authorization: `Token ${token}` },
       }
@@ -217,7 +217,7 @@ export default function Budget() {
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           const budgetId = data[0].id;
-          fetch(`http://127.0.0.1:8000/api/budgets/${budgetId}/`, {
+          fetch(`${API_BASE_URL}/api/budgets/${budgetId}/`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -235,7 +235,7 @@ export default function Budget() {
             })
             .catch((err) => console.error("Error updating budget:", err));
         } else {
-          fetch(`http://127.0.0.1:8000/api/budgets/`, {
+          fetch(`${API_BASE_URL}/api/budgets/`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

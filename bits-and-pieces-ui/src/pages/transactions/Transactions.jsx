@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import API_BASE_URL from "./apiConfig";
 
 function TransactionList({ title, apiEndpoint, categoryOptions }) {
   const [transactions, setTransactions] = useState([]);
@@ -296,7 +297,7 @@ export default function Transactions() {
     setCategoriesLoading(true);
     setCategoriesError(null);
 
-    fetch("http://127.0.0.1:8000/api/categories/", {
+    fetch("https://bitsandpieces-j6k5.onrender.com/api/categories/", {
       headers: {
         Authorization: `Token ${token}`,
       },
@@ -345,12 +346,12 @@ export default function Transactions() {
         <>
           <TransactionList
             title="Income"
-            apiEndpoint="http://127.0.0.1:8000/api/incomes/"
+            apiEndpoint={`${API_BASE_URL}/api/incomes/`}
             categoryOptions={incomeCategories}
           />
           <TransactionList
             title="Expenses"
-            apiEndpoint="http://127.0.0.1:8000/api/expenses/"
+            apiEndpoint={`${API_BASE_URL}/api/expenses/`}
             categoryOptions={expenseCategories}
           />
         </>
