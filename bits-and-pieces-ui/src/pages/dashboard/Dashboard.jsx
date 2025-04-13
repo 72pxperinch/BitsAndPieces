@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
-import API_BASE_URL from "./apiConfig";
+import API_BASE_URL from "../../apiConfig";
 
 import { BudgetStatusCard, MonthlyTotalsCard, OverallBalanceCard } from "./components/TopCards";
 import CategoryExpenseChart from "./components/CategoryExpenseChartCard";

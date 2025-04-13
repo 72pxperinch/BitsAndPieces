@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import API_BASE_URL from "./apiConfig";
+import API_BASE_URL from "../../apiConfig";
 
 function TransactionList({ title, apiEndpoint, categoryOptions }) {
   const [transactions, setTransactions] = useState([]);

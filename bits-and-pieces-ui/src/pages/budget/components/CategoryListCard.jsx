@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import dayjs from "dayjs"; 
+import API_BASE_URL from "../../../apiConfig";
 
 export default function CategoryList({
   isReadOnly,

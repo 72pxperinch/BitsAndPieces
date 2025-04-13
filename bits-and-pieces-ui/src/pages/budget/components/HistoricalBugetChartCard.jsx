@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
+import API_BASE_URL from "../../../apiConfig";
 
 export default function HistoricalBudgetChart({ historyData, currentMonth }) {
   const svgRef = useRef();

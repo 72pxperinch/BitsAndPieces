@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import CategoryList from "./components/CategoryListCard";
 import HistoricalBudgetChart from "./components/HistoricalBugetChartCard";
 import { motion } from "framer-motion";
+import API_BASE_URL from "../../apiConfig";
 
 export default function Budget() {
   const [token, setToken] = useState(
