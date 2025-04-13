@@ -25,7 +25,10 @@ SECRET_KEY = 'django-insecure-3#nvbm#oi06v@l#3hgjmszu7%s#wei0itdq*t#k1*+74e4@-=m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "bitsandpieces-j6k5.onrender.com",
+    '*',
+]
 
 
 # Application definition
@@ -140,3 +143,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://bitsandpieces-j6k5.onrender.com",
+]
