@@ -5,9 +5,7 @@ import { motion } from "framer-motion";
 import API_BASE_URL from "../../apiConfig";
 
 export default function Budget() {
-  const [token, setToken] = useState(
-    () => localStorage.getItem("auth_token") || ""
-  );
+  const token = localStorage.getItem("auth_token");
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [budgetData, setBudgetData] = useState({
@@ -26,7 +24,6 @@ export default function Budget() {
       .then((data) => {
         if (Array.isArray(data)) {
           setCategories(data);
-
         }
         setLoading(false);
       })
@@ -36,7 +33,18 @@ export default function Budget() {
       });
   }, [token]);
 
-  useEffect(() => {
+  const getCategoryNameById = (categoryId) => {
+    if (!categories || !Array.isArray(categories)) {
+      return "Unknown Category";
+    }
+
+    const category = categories.find((cat) => cat.id === categoryId);
+
+    return category ? category.name : "Unknown Category";
+  };
+
+useEffect(() => {
+  if (categories.length > 0) {
     setLoading(true);
     fetch(`${API_BASE_URL}/api/budgets/`, {
       headers: { Authorization: `Token ${token}` },
@@ -52,7 +60,8 @@ export default function Budget() {
         console.error("Failed to fetch budgets:", err);
         setLoading(false);
       });
-  }, [token]);
+  }
+}, [token, categories]);
 
   const processAndSetBudgetData = (rawData) => {
     const sortedData = [...rawData].sort((a, b) => {
@@ -69,9 +78,11 @@ export default function Budget() {
     );
 
     const currentCategories = currentMonthData.map((item) => {
-      const category = categories.find((cat) => cat.id === item.category) || {
+      const category = categories.find((cat) => {
+        return cat.id === item.category; 
+      }) || {
         id: item.category,
-        name: `Category ${item.category}`,
+        name: getCategoryNameById(item.category),
       };
       return {
         id: item.category,
@@ -170,7 +181,7 @@ export default function Budget() {
   };
 
   const updateBudgetOnServer = (categoryId, amount) => {
-    const monthStr = budgetData.current.month; 
+    const monthStr = budgetData.current.month;
 
     const parts = monthStr.split(" ");
     if (parts.length !== 2) {
@@ -178,8 +189,8 @@ export default function Budget() {
       return;
     }
 
-    const monthName = parts[0]; 
-    const year = parseInt(parts[1]); 
+    const monthName = parts[0];
+    const year = parseInt(parts[1]);
 
     const months = [
       "January",
@@ -206,8 +217,6 @@ export default function Budget() {
       2,
       "0"
     )}-01`;
-
-    console.log("Formatted date:", formattedDate);
     fetch(
       `${API_BASE_URL}/api/budgets/?category=${categoryId}&month=${formattedDate}`,
       {
@@ -354,14 +363,12 @@ export default function Budget() {
           isReadOnly={isReadOnly}
           categories={currentData.categories.filter((cat) => {
             const originalCat = categories.find((c) => c.id === cat.id);
-            return originalCat && originalCat.type === "expense"; 
+            return originalCat && originalCat.type === "expense";
           })}
           onCategoryUpdate={handleCategoryUpdate}
-          availableCategories={
-            categories
-              .filter((cat) => cat.type === "expense")
-              .map((cat) => cat.name)
-          }
+          availableCategories={categories
+            .filter((cat) => cat.type === "expense")
+            .map((cat) => cat.name)}
           onAddCategory={handleAddCategory}
         />
         <div className="grid grid-rows-3 gap-4 h-fit">

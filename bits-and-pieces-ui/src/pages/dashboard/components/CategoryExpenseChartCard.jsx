@@ -117,7 +117,7 @@ export default function CategoryExpenseChart({ categories }) {
       .append("text")
       .attr("x", width - 100)
       .attr("y", 50)
-      .text("Within Budget")
+      .text("Over Budget")
       .style("font-size", "12px")
       .attr("alignment-baseline", "middle");
   }, [categories, containerWidth]);
@@ -133,9 +133,9 @@ export default function CategoryExpenseChart({ categories }) {
       ref={wrapperRef}
     >
       <h2 className="text-lg font-bold mb-2">
-        Category Budget
+        Category Budget vs. Spending
       </h2>
-      <div className="flex justify-center items-center mt-4 overflow-x-auto">
+      <div className="flex justify-center items-center mt-4 overflow-x-auto w-full">
         <svg ref={svgRef}></svg>
       </div>
     </motion.div>

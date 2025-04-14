@@ -184,9 +184,40 @@ const RecentTransactions = ({ transactions }) => {
   );
 };
 
+const MonthNavigation = ({ months, currentMonthIndex, onMonthChange }) => (
+  <motion.div
+    key="dash-month-nav"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    transition={{ duration: 0.4, delay: 0.2 }}
+    className="bg-white shadow-md rounded-lg px-6 py-4 flex justify-between items-center mb-4"
+  >
+    <button
+      onClick={() => onMonthChange(currentMonthIndex + 1)}
+      disabled={currentMonthIndex >= months.length - 1}
+      className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-900 disabled:opacity-40"
+    >
+      &lt; Previous
+    </button>
+    <span className="text-xl font-semibold text-gray-700">
+      {months[currentMonthIndex]}
+    </span>
+    <button
+      onClick={() => onMonthChange(currentMonthIndex - 1)}
+      disabled={currentMonthIndex <= 0}
+      className="px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-900 disabled:opacity-40"
+    >
+      Next &gt;
+    </button>
+  </motion.div>
+);
+
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [monthData, setMonthData] = useState([]);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [dashboardData, setDashboardData] = useState({
     monthlyBudget: 0,
     monthlyIncome: 0,
@@ -201,162 +232,193 @@ export default function Dashboard() {
     const date = new Date(dateString);
     return date.toLocaleString('default', { month: 'short' });
   };
+  
+  const getMonthDisplay = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
 
-  useEffect(() => {
+  const generateMonthStrings = (count) => {
+    const months = [];
+    for (let i = 0; i < count; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+      months.push({
+        fullDate: monthStr,
+        displayName: getMonthDisplay(monthStr)
+      });
+    }
+    return months;
+  };
+
+  const availableMonths = generateMonthStrings(12);
+  
+  const fetchMonthData = async (monthDate) => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
       setError("Authentication token not found");
-      setLoading(false);
       return;
     }
-
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
+    
+    try {
+      setLoading(true);
+      
+      const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories/`, {
+        headers: { Authorization: `Token ${token}` }
+      });
+      if (!categoriesResponse.ok) throw new Error("Failed to fetch categories");
+      const categories = await categoriesResponse.json();
+      
+      const monthStr = monthDate.substring(0, 7); 
+      
+      const budgetsResponse = await fetch(`${API_BASE_URL}/api/budgets/?month=${monthDate}`, {
+        headers: { Authorization: `Token ${token}` }
+      });
+      if (!budgetsResponse.ok) throw new Error("Failed to fetch budgets");
+      const budgetsData = await budgetsResponse.json();
+      
+      const monthlyBudget = budgetsData.reduce((total, item) => total + parseFloat(item.amount), 0);
+      
+      const incomeResponse = await fetch(`${API_BASE_URL}/api/incomes/`,  {
+        headers: { Authorization: `Token ${token}` }
+      });
+      if (!incomeResponse.ok) throw new Error("Failed to fetch incomes");
+      const incomesData = await incomeResponse.json();
+      
+      const currentMonthIncomes = incomesData.results.filter(income => 
+        income.date.startsWith(monthStr)
+      );
+      const monthlyIncome = currentMonthIncomes.reduce((total, income) => 
+        total + parseFloat(income.amount), 0
+      );
+      
+      const expenseResponse = await fetch(`${API_BASE_URL}/api/expenses/`, {
+        headers: { Authorization: `Token ${token}` }
+      });
+      if (!expenseResponse.ok) throw new Error("Failed to fetch expenses");
+      const expensesData = await expenseResponse.json();
+      
+      const currentMonthExpenses = expensesData.results.filter(expense => 
+        expense.date.startsWith(monthStr)
+      );
+      const monthlyExpense = currentMonthExpenses.reduce((total, expense) => 
+        total + parseFloat(expense.amount), 0
+      );
+      
+      const allTimeIncome = incomesData.results.reduce((total, income) => 
+        total + parseFloat(income.amount), 0
+      );
+      const allTimeExpense = expensesData.results.reduce((total, expense) => 
+        total + parseFloat(expense.amount), 0
+      );
+      const overallBalance = allTimeIncome - allTimeExpense;
+      
+      const expenseCategories = categories.filter(cat => cat.type === "expense");
+      
+      const categoriesWithBudgetAndActual = expenseCategories.map(category => {
+        const categoryBudget = budgetsData.find(b => b.category === category.id);
         
-        const categoriesResponse = await fetch(`${API_BASE_URL}/api/categories/`, {
-          headers: { Authorization: `Token ${token}` }
-        });
-        if (!categoriesResponse.ok) throw new Error("Failed to fetch categories");
-        const categories = await categoriesResponse.json();
-        
-        const currentDate = new Date();
-        const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
-        
-        const budgetsResponse = await fetch(`${API_BASE_URL}/api/budgets/?month=${currentMonth}`, {
-          headers: { Authorization: `Token ${token}` }
-        });
-        if (!budgetsResponse.ok) throw new Error("Failed to fetch budgets");
-        const budgetsData = await budgetsResponse.json();
-        
-        const monthlyBudget = budgetsData.reduce((total, item) => total + parseFloat(item.amount), 0);
-        
-        const incomeResponse = await fetch(`${API_BASE_URL}/api/incomes/`,  {
-          headers: { Authorization: `Token ${token}` }
-        });
-        if (!incomeResponse.ok) throw new Error("Failed to fetch incomes");
-        const incomesData = await incomeResponse.json();
-        
-        const currentMonthIncomes = incomesData.results.filter(income => 
-          income.date.startsWith(currentMonth.substring(0, 7))
+        const categoryExpenses = currentMonthExpenses.filter(e => e.category === category.id);
+        const actualSpending = categoryExpenses.reduce((total, exp) => 
+          total + parseFloat(exp.amount), 0
         );
-        const monthlyIncome = currentMonthIncomes.reduce((total, income) => 
+        
+        return {
+          name: category.name,
+          budget: categoryBudget ? parseFloat(categoryBudget.amount) : 0,
+          actual: actualSpending
+        };
+      });
+      
+      const monthlyData = [];
+      for (let i = 5; i >= 0; i--) {
+        const chartMonthDate = new Date(monthDate);
+        chartMonthDate.setMonth(chartMonthDate.getMonth() - i);
+        const chartMonthStr = `${chartMonthDate.getFullYear()}-${String(chartMonthDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        const monthIncomes = incomesData.results.filter(income => 
+          income.date.startsWith(chartMonthStr)
+        );
+        const monthIncomeTotal = monthIncomes.reduce((total, income) => 
           total + parseFloat(income.amount), 0
         );
         
-        const expenseResponse = await fetch(`${API_BASE_URL}/api/expenses/`, {
+        const monthExpenses = expensesData.results.filter(expense => 
+          expense.date.startsWith(chartMonthStr)
+        );
+        const monthExpenseTotal = monthExpenses.reduce((total, expense) => 
+          total + parseFloat(expense.amount), 0
+        );
+        
+        const monthBudgetsResponse = await fetch(`${API_BASE_URL}/api/budgets/?month=${chartMonthStr}-01`, {
           headers: { Authorization: `Token ${token}` }
         });
-        if (!expenseResponse.ok) throw new Error("Failed to fetch expenses");
-        const expensesData = await expenseResponse.json();
-        
-        const currentMonthExpenses = expensesData.results.filter(expense => 
-          expense.date.startsWith(currentMonth.substring(0, 7))
-        );
-        const monthlyExpense = currentMonthExpenses.reduce((total, expense) => 
-          total + parseFloat(expense.amount), 0
+        const monthBudgets = await monthBudgetsResponse.json();
+        const monthBudgetTotal = monthBudgets.reduce((total, item) => 
+          total + parseFloat(item.amount), 0
         );
         
-        const allTimeIncome = incomesData.results.reduce((total, income) => 
-          total + parseFloat(income.amount), 0
-        );
-        const allTimeExpense = expensesData.results.reduce((total, expense) => 
-          total + parseFloat(expense.amount), 0
-        );
-        const overallBalance = allTimeIncome - allTimeExpense;
-        
-        const expenseCategories = categories.filter(cat => cat.type === "expense");
-        
-        const categoriesWithBudgetAndActual = expenseCategories.map(category => {
-          const categoryBudget = budgetsData.find(b => b.category === category.id);
-          
-          const categoryExpenses = currentMonthExpenses.filter(e => e.category === category.id);
-          const actualSpending = categoryExpenses.reduce((total, exp) => 
-            total + parseFloat(exp.amount), 0
-          );
-          
-          return {
-            name: category.name,
-            budget: categoryBudget ? parseFloat(categoryBudget.amount) : 0,
-            actual: actualSpending
-          };
+        monthlyData.push({
+          month: getMonthAbbreviation(chartMonthStr + "-01"),
+          income: monthIncomeTotal,
+          expense: monthExpenseTotal,
+          budget: monthBudgetTotal || 0  
         });
-        
-        const monthlyData = [];
-        for (let i = 5; i >= 0; i--) {
-          const monthDate = new Date();
-          monthDate.setMonth(monthDate.getMonth() - i);
-          const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-          
-          const monthIncomes = incomesData.results.filter(income => 
-            income.date.startsWith(monthStr)
-          );
-          const monthIncomeTotal = monthIncomes.reduce((total, income) => 
-            total + parseFloat(income.amount), 0
-          );
-          
-          const monthExpenses = expensesData.results.filter(expense => 
-            expense.date.startsWith(monthStr)
-          );
-          const monthExpenseTotal = monthExpenses.reduce((total, expense) => 
-            total + parseFloat(expense.amount), 0
-          );
-          
-          const monthBudgetsResponse = await fetch(`${API_BASE_URL}/api/budgets/?month=${monthStr}-01`, {
-            headers: { Authorization: `Token ${token}` }
-          });
-          const monthBudgets = await monthBudgetsResponse.json();
-          const monthBudgetTotal = monthBudgets.reduce((total, item) => 
-            total + parseFloat(item.amount), 0
-          );
-          
-          monthlyData.push({
-            month: getMonthAbbreviation(monthStr + "-01"),
-            income: monthIncomeTotal,
-            expense: monthExpenseTotal,
-            budget: monthBudgetTotal || 0  
-          });
-        }
-        
-        const allTransactions = [
-          ...incomesData.results.map(income => ({
-            ...income,
-            type: "income",
-            category_name: categories.find(c => c.id === income.category)?.name || "Income"
-          })),
-          ...expensesData.results.map(expense => ({
-            ...expense,
-            type: "expense",
-            category_name: categories.find(c => c.id === expense.category)?.name || "Expense"
-          }))
-        ];
-        
-        allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const recentTransactions = allTransactions.slice(0, 8);
-        
-        setDashboardData({
-          monthlyBudget,
-          monthlyIncome,
-          monthlyExpense,
-          overallBalance,
-          categories: categoriesWithBudgetAndActual,
-          monthlyData,
-          recentTransactions
-        });
-        
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError(err.message);
-        setLoading(false);
       }
-    };
+      
+      const allTransactions = [
+        ...incomesData.results.filter(income => income.date.startsWith(monthStr)).map(income => ({
+          ...income,
+          type: "income",
+          category_name: categories.find(c => c.id === income.category)?.name || "Income"
+        })),
+        ...expensesData.results.filter(expense => expense.date.startsWith(monthStr)).map(expense => ({
+          ...expense,
+          type: "expense",
+          category_name: categories.find(c => c.id === expense.category)?.name || "Expense"
+        }))
+      ];
+      
+      allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      const recentTransactions = allTransactions.slice(0, 8);
+      
+      setDashboardData({
+        monthlyBudget,
+        monthlyIncome,
+        monthlyExpense,
+        overallBalance,
+        categories: categoriesWithBudgetAndActual,
+        monthlyData,
+        recentTransactions
+      });
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError(err.message);
+      setLoading(false);
+    }
+  };
 
-    fetchDashboardData();
+  useEffect(() => {
+    setMonthData(availableMonths);
+    
+    fetchMonthData(availableMonths[currentMonthIndex].fullDate);
   }, []);
+  
+  useEffect(() => {
+    if (monthData.length > 0) {
+      fetchMonthData(monthData[currentMonthIndex].fullDate);
+    }
+  }, [currentMonthIndex]);
 
-  if (loading) {
+  const handleMonthChange = (index) => {
+    setCurrentMonthIndex(index);
+  };
+
+  if (loading && currentMonthIndex === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <p className="text-lg">Loading dashboard data...</p>
@@ -382,33 +444,57 @@ export default function Dashboard() {
       transition={{ duration: 0.4 }}
     >
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-3 gap-4 mb-4"> 
-        <div className="col-span-1">
-          <OverallBalanceCard balance={dashboardData.overallBalance} />
+      
+      {monthData.length > 0 && (
+        <MonthNavigation
+          months={monthData.map(m => m.displayName)}
+          currentMonthIndex={currentMonthIndex}
+          onMonthChange={handleMonthChange}
+        />
+      )}
+      
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-lg">Loading {monthData[currentMonthIndex]?.displayName} data...</p>
         </div>
-        <div className="col-span-1">
-          <BudgetStatusCard
-            budget={dashboardData.monthlyBudget}
-            expense={dashboardData.monthlyExpense}
-          />
-        </div>
-        <div className="col-span-1 md:col-span-2 2xl:col-span-1">
-          <MonthlyTotalsCard
-            income={dashboardData.monthlyIncome}
-            expense={dashboardData.monthlyExpense}
-          />
-        </div>
-      </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-3 gap-4 mb-4"> 
+            <div className="col-span-1">
+              <OverallBalanceCard balance={dashboardData.overallBalance} />
+            </div>
+            <div className="col-span-1">
+              <BudgetStatusCard
+                budget={dashboardData.monthlyBudget}
+                expense={dashboardData.monthlyExpense}
+              />
+            </div>
+            <div className="col-span-1 md:col-span-2 2xl:col-span-1">
+              <MonthlyTotalsCard
+                income={dashboardData.monthlyIncome}
+                expense={dashboardData.monthlyExpense}
+              />
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <CategoryExpenseChart categories={dashboardData.categories} />
-        <MonthlyComparisonChart monthlyData={dashboardData.monthlyData} />
-      </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <CategoryExpenseChart categories={dashboardData.categories} />
+            <MonthlyComparisonChart monthlyData={dashboardData.monthlyData} />
+          </div>
 
-      <div className="mb-4">
-        <RecentTransactions transactions={dashboardData.recentTransactions} />
-      </div>
+          <div className="mb-4">
+            <RecentTransactions transactions={dashboardData.recentTransactions} />
+          </div>
+          
+          {currentMonthIndex > 0 && (
+            <div className="mt-4 p-3 bg-yellow-100 border border-yellow-400 rounded">
+              <p className="text-yellow-800">
+                You are viewing historical data for {monthData[currentMonthIndex].displayName}.
+              </p>
+            </div>
+          )}
+        </>
+      )}
     </motion.div>
   );
 }
