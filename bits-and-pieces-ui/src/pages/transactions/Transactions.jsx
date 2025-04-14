@@ -10,7 +10,9 @@ function TransactionList({ title, apiEndpoint, categoryOptions }) {
   const [sortBy, setSortBy] = useState("-date"); 
   const [filter, setFilter] = useState(""); 
   const [minAmount, setMinAmount] = useState(0);
-  const [maxAmount, setMaxAmount] = useState(9999);
+  const [maxAmount, setMaxAmount] = useState(0);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -41,8 +43,16 @@ function TransactionList({ title, apiEndpoint, categoryOptions }) {
       params.append("min_amount", minAmount);
     }
     
-    if (maxAmount < 9999) {
+    if (maxAmount > 0) {
       params.append("max_amount", maxAmount);
+    }
+
+    if (startDate) {
+      params.append("start_date", startDate);
+    }
+
+    if (endDate) {
+      params.append("end_date", endDate);
     }
 
     fetch(`${apiEndpoint}?${params.toString()}`, {
@@ -69,7 +79,7 @@ function TransactionList({ title, apiEndpoint, categoryOptions }) {
 
   useEffect(() => {
     fetchTransactions();
-  }, [currentPage, sortBy, filter, minAmount, maxAmount, apiEndpoint]);
+  }, [currentPage, sortBy, filter, minAmount, maxAmount, startDate, endDate, apiEndpoint]);
 
   const handleAddTransaction = () => {
     if (!formData.amount || !formData.date || !formData.category) return;
@@ -108,7 +118,7 @@ function TransactionList({ title, apiEndpoint, categoryOptions }) {
   });
 
   useEffect(() => {
-    console.log("Current filter value:", filter, typeof filter);
+    console.log("Current filter value:", filter);
   }, [filter]);
 
   return (
@@ -190,33 +200,67 @@ function TransactionList({ title, apiEndpoint, categoryOptions }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
-            Amount Range: ${minAmount} – ${maxAmount}
+            Amount Range:
           </label>
           <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={5000}
-              step={50}
-              value={minAmount}
-              onChange={(e) => {
-                setMinAmount(parseInt(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="w-full"
-            />
-            <input
-              type="range"
-              min={0}
-              max={10000}
-              step={50}
-              value={maxAmount}
-              onChange={(e) => {
-                setMaxAmount(parseInt(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="w-full"
-            />
+            <div className="flex items-center gap-2 w-full">
+              <span className="text-sm text-gray-500">Min:</span>
+              <input
+                type="number"
+                min={0}
+                value={minAmount}
+                onChange={(e) => {
+                  setMinAmount(parseInt(e.target.value) || 0);
+                  setCurrentPage(1);
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <span className="text-sm text-gray-500">Max:</span>
+              <input
+                type="number"
+                min={0}
+                value={maxAmount}
+                onChange={(e) => {
+                  setMaxAmount(parseInt(e.target.value) || 0);
+                  setCurrentPage(1);
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Date Range:
+          </label>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 w-full">
+              <span className="text-sm text-gray-500">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <span className="text-sm text-gray-500">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
           </div>
         </div>
       </div>

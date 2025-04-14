@@ -2,7 +2,7 @@ import django_filters
 from itertools import chain
 from operator import attrgetter
 from django.contrib.auth.models import User
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, NumberFilter
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, NumberFilter, DateFilter
 
 from rest_framework import viewsets, status, filters
 from rest_framework.views import APIView
@@ -22,14 +22,16 @@ from .serializers import (
 
 
 # Custom filter sets for transactions
+
 class TransactionFilterSet(FilterSet):
     min_amount = NumberFilter(field_name="amount", lookup_expr='gte')
     max_amount = NumberFilter(field_name="amount", lookup_expr='lte')
     category = django_filters.ModelChoiceFilter(queryset=Category.objects.all())
-    
-    class Meta:
-        fields = ['category', 'min_amount', 'max_amount']
+    start_date = DateFilter(field_name="date", lookup_expr='gte')
+    end_date = DateFilter(field_name="date", lookup_expr='lte')
 
+    class Meta:
+        fields = ['category', 'min_amount', 'max_amount', 'start_date', 'end_date']
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

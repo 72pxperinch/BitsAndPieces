@@ -43,25 +43,41 @@ export default function Budget() {
     return category ? category.name : "Unknown Category";
   };
 
-useEffect(() => {
-  if (categories.length > 0) {
-    setLoading(true);
-    fetch(`${API_BASE_URL}/api/budgets/`, {
-      headers: { Authorization: `Token ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          processAndSetBudgetData(data);
-        }
-        setLoading(false);
+  useEffect(() => {
+    if (categories.length > 0) {
+      setLoading(true);
+      fetch(`${API_BASE_URL}/api/budgets/`, {
+        headers: { Authorization: `Token ${token}` },
       })
-      .catch((err) => {
-        console.error("Failed to fetch budgets:", err);
-        setLoading(false);
-      });
-  }
-}, [token, categories]);
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            processAndSetBudgetData(data);
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch budgets:", err);
+          setLoading(false);
+        });
+    }
+  }, [token, categories]);
+
+  const formatMonth = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const getCurrentMonthFormatted = () => {
+    const now = new Date();
+    return {
+      formatted: formatMonth(`${now.getFullYear()}-${now.getMonth() + 1}-01`),
+      isoString: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
+    };
+  };
 
   const processAndSetBudgetData = (rawData) => {
     const sortedData = [...rawData].sort((a, b) => {
@@ -69,15 +85,19 @@ useEffect(() => {
     });
 
     const uniqueMonths = [...new Set(sortedData.map((item) => item.month))];
+    
+    // Get current month regardless of data
+    const currentMonthData = getCurrentMonthFormatted();
+    
+    // Check if the current month exists in the data
+    const currentMonthExists = uniqueMonths.includes(currentMonthData.isoString);
+    
+    // Filter data for current month if exists
+    const currentMonthBudgetData = currentMonthExists 
+      ? sortedData.filter(item => item.month === currentMonthData.isoString)
+      : [];
 
-    if (uniqueMonths.length === 0) return;
-
-    const currentMonth = uniqueMonths[0];
-    const currentMonthData = sortedData.filter(
-      (item) => item.month === currentMonth
-    );
-
-    const currentCategories = currentMonthData.map((item) => {
+    const currentCategories = currentMonthBudgetData.map((item) => {
       const category = categories.find((cat) => {
         return cat.id === item.category; 
       }) || {
@@ -96,15 +116,10 @@ useEffect(() => {
       0
     );
 
-    const formatMonth = (dateStr) => {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      });
-    };
-
-    const history = uniqueMonths.slice(1).map((month) => {
+    // Process historical months (excluding current month if it exists)
+    const historyMonths = uniqueMonths.filter(month => month !== currentMonthData.isoString);
+    
+    const history = historyMonths.map((month) => {
       const monthData = sortedData.filter((item) => item.month === month);
       const monthCategories = monthData.map((item) => {
         const category = categories.find((cat) => cat.id === item.category) || {
@@ -130,14 +145,19 @@ useEffect(() => {
       };
     });
 
+    // Sort history by date descending
+    history.sort((a, b) => {
+      return new Date(b.month) - new Date(a.month);
+    });
+
     setBudgetData({
       current: {
-        month: formatMonth(currentMonth),
+        month: currentMonthData.formatted,
         categories: currentCategories,
         totalBudget: currentTotalBudget,
       },
       history: history,
-      allCategories: budgetData.allCategories,
+      allCategories: categories.filter(cat => cat.type === "expense")
     });
   };
 

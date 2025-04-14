@@ -34,7 +34,7 @@ function CategoryManager({ title, categoryType }) {
   const handleAdd = () => {
     if (!newCategory.trim()) return;
 
-    fetch(`${API_BASE_URL}api/categories/`, {
+    fetch(`${API_BASE_URL}/api/categories/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -22,6 +22,27 @@ export default function CategoryExpenseChart({ categories }) {
   useEffect(() => {
     if (!categories || categories.length === 0 || containerWidth === 0) return;
 
+    // Filter to only include categories that have actual expense data
+    const categoriesWithExpenses = categories.filter(cat => cat.actual > 0);
+    
+    // If no categories have expenses, show a message instead
+    if (categoriesWithExpenses.length === 0) {
+      d3.select(svgRef.current).selectAll("*").remove();
+      const svg = d3.select(svgRef.current)
+        .attr("width", containerWidth)
+        .attr("height", 150);
+        
+      svg.append("text")
+        .attr("x", containerWidth / 2)
+        .attr("y", 75)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("fill", "#666")
+        .text("No expense data available for this period");
+      
+      return;
+    }
+
     const margin = { top: 30, right: 30, bottom: 70, left: 60 };
     const width = containerWidth - margin.left - margin.right;
     const height = 300 - margin.top - margin.bottom;
@@ -37,7 +58,7 @@ export default function CategoryExpenseChart({ categories }) {
 
     const x = d3
       .scaleBand()
-      .domain(categories.map((d) => d.name))
+      .domain(categoriesWithExpenses.map((d) => d.name))
       .range([0, width])
       .padding(0.2);
 
@@ -49,7 +70,7 @@ export default function CategoryExpenseChart({ categories }) {
       .attr("transform", "translate(-10,0)rotate(-45)")
       .style("text-anchor", "end");
 
-    const maxValue = d3.max(categories, (d) => Math.max(d.budget, d.actual));
+    const maxValue = d3.max(categoriesWithExpenses, (d) => Math.max(d.budget, d.actual));
     const y = d3
       .scaleLinear()
       .domain([0, maxValue * 1.1])
@@ -59,7 +80,7 @@ export default function CategoryExpenseChart({ categories }) {
 
     svg
       .selectAll(".bar-budget")
-      .data(categories)
+      .data(categoriesWithExpenses)
       .enter()
       .append("rect")
       .attr("class", "bar-budget")
@@ -71,7 +92,7 @@ export default function CategoryExpenseChart({ categories }) {
 
     svg
       .selectAll(".bar-actual")
-      .data(categories)
+      .data(categoriesWithExpenses)
       .enter()
       .append("rect")
       .attr("class", "bar-actual")
@@ -81,45 +102,48 @@ export default function CategoryExpenseChart({ categories }) {
       .attr("height", (d) => height - y(d.actual))
       .attr("fill", (d) => (d.actual > d.budget ? "#e41a1c" : "#4daf4a"));
 
-    svg
-      .append("circle")
-      .attr("cx", width - 120)
-      .attr("cy", 10)
-      .attr("r", 6)
-      .style("fill", "#377eb8");
-    svg
-      .append("circle")
-      .attr("cx", width - 120)
-      .attr("cy", 30)
-      .attr("r", 6)
-      .style("fill", "#4daf4a");
-    svg
-      .append("circle")
-      .attr("cx", width - 120)
-      .attr("cy", 50)
-      .attr("r", 6)
-      .style("fill", "#e41a1c");
-    svg
-      .append("text")
-      .attr("x", width - 100)
-      .attr("y", 10)
-      .text("Budget")
-      .style("font-size", "12px")
-      .attr("alignment-baseline", "middle");
-    svg
-      .append("text")
-      .attr("x", width - 100)
-      .attr("y", 30)
-      .text("Within Budget")
-      .style("font-size", "12px")
-      .attr("alignment-baseline", "middle");
-    svg
-      .append("text")
-      .attr("x", width - 100)
-      .attr("y", 50)
-      .text("Over Budget")
-      .style("font-size", "12px")
-      .attr("alignment-baseline", "middle");
+    // Only draw legend if we have data to show
+    if (categoriesWithExpenses.length > 0) {
+      svg
+        .append("circle")
+        .attr("cx", width - 120)
+        .attr("cy", 10)
+        .attr("r", 6)
+        .style("fill", "#377eb8");
+      svg
+        .append("circle")
+        .attr("cx", width - 120)
+        .attr("cy", 30)
+        .attr("r", 6)
+        .style("fill", "#4daf4a");
+      svg
+        .append("circle")
+        .attr("cx", width - 120)
+        .attr("cy", 50)
+        .attr("r", 6)
+        .style("fill", "#e41a1c");
+      svg
+        .append("text")
+        .attr("x", width - 100)
+        .attr("y", 10)
+        .text("Budget")
+        .style("font-size", "12px")
+        .attr("alignment-baseline", "middle");
+      svg
+        .append("text")
+        .attr("x", width - 100)
+        .attr("y", 30)
+        .text("Within Budget")
+        .style("font-size", "12px")
+        .attr("alignment-baseline", "middle");
+      svg
+        .append("text")
+        .attr("x", width - 100)
+        .attr("y", 50)
+        .text("Over Budget")
+        .style("font-size", "12px")
+        .attr("alignment-baseline", "middle");
+    }
   }, [categories, containerWidth]);
 
   return (
